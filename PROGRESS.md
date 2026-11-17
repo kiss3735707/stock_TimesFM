@@ -28,19 +28,19 @@
 
 | 项 | 值 |
 |----|----|
-| 当前里程碑 | M0: 验证入口（规格已确认，尚未写测试） |
-| 总体进度 | 0/3 |
+| 当前里程碑 | M2 已关闭。三个里程碑都已完成 |
+| 总体进度 | 3/3 |
 | 设计文档 | 2026-11-17 第四轮处置已落盘：不换股；MDE = 0.05 + 2.8 × SE；150 下限可注入 |
-| 代码自动化验证 | ⬜ 尚未建立 |
-| 用户验收 | 第二节范围已确认。M0 验收尚未开始 |
+| 代码自动化验证 | ✅ `.venv/bin/python -m pytest`：35 passed in 0.60s（2026-11-17）。M2 收集阶段曾失败：`No module named 'interval_compare.forecast'` |
+| 用户验收 | 2026-11-17 用户说「以上都确认」，M2 关闭 |
 
 ## 里程碑清单
 
 | # | 里程碑 | 状态 | 自动化验证 | 用户验收 |
 |---|--------|------|-----------|---------|
-| M0 | 建立只含 pytest 的 `.venv`。`python -m pytest` 能红能绿。测试覆盖尺子、区间分数、四态（下限注入 0）、下限生效、相位、种子可重复、`tradestatus="0"` 剔除、日历缺口剔除、复牌首日保留、快照第一行不当成复牌。不加载模型，不下载行情 | ⬜ | ⬜ | ⬜ |
-| M1 | 下载并冻结 603232 快照与交易日历。尺子出区间分数、覆盖率、宽度、中位数误差，并报告 MDE。本里程碑没有 δ | ⬜ | ⬜ | ⬜ |
-| M2 | 同一快照上跑 TimesFM 3.0，写出 `summary.md` 的四态结论 | ⬜ | ⬜ | ⬜ |
+| M0 | 建立只含 pytest 的 `.venv`。`python -m pytest` 能红能绿。测试覆盖尺子、区间分数、四态（下限注入 0）、下限生效、相位、种子可重复、`tradestatus="0"` 剔除、日历缺口剔除、复牌首日保留、快照第一行不当成复牌。不加载模型，不下载行情 | ✅ | ✅ | ✅ |
+| M1 | 下载并冻结 603232 快照与交易日历。尺子出区间分数、覆盖率、宽度、中位数误差，并报告 MDE。本里程碑没有 δ | ✅ | ✅ | ✅ |
+| M2 | 同一快照上跑 TimesFM 3.0，写出 `summary.md` 的四态结论 | ✅ | ✅ | ✅ |
 
 （状态只允许：✅ 完成 / 🔄 进行中 / ⬜ 未开始。**一行一个里程碑，绝不重复**。用户验收列只有用户说「确认」后才可打 ✅，agent 不得代勾。）
 
@@ -72,17 +72,21 @@
 | 2026-11-17 | 换股只在评分窗口内连续停牌 ≥10 日 | ~~被 2026-11-17 替代~~ | 第四轮：大约只丢掉不到十个不重叠起点，剔除已经处理日历被压扁 |
 | 2026-11-17 | 不换股。停牌只剔除起点。快照缺了日历上的交易日就停止，不改 600036，也不换行情源 | 有效 | 第四轮 4.1。不采纳「缺口就换股」，也不采纳「阈值提到 60 日」 |
 | 2026-11-17 | MDE = 0.05 + 2.8 × SE（未配对，偏保守） | 有效 | 第四轮 4.2。只报「CI 半宽」会少算 5 个百分点 |
+| 2026-11-17 | 用户说「开始m1」，M0 关闭 | 有效 | 未单独说「确认」，以进入下一里程碑作为验收 |
+| 2026-11-17 | 下载命令是 `python -m interval_compare download`。日历和名称写在快照旁边的 `603232_calendar_YYYYMMDD.csv`、`603232_meta_YYYYMMDD.json`。M1 的 `run.json` 里 timesfm 为 null | 有效 | DESIGN 只规定了 run 的参数。下载是一次性 I/O，不改 run 的命令行 |
+| 2026-11-17 | 剔除比例的候选要在日历上还有后 3 个交易日。样本尾巴不算剔除。MDE 的 SE 来自把尺子分数独立重抽成两份 | 有效 | 否则每次运行都会把最后几天算成数据缺口。未配对 SE 在没有 TimesFM 时只能从尺子自己的分数来 |
+| 2026-11-17 | 用户说「开始m2」，M1 关闭 | 有效 | 未单独说「确认」，以进入下一里程碑作为验收 |
+| 2026-11-17 | 用户说「以上都确认」，M2 关闭 | 有效 | 四态「证据不足」被接受。按三条说明提交 |
+| 2026-11-17 | 依赖锁 `timesfm[torch]==3.0.2`、`torch==2.15.0`。权重 `google/timesfm-3.0-pytorch`，revision `43046b85ec22d584a13f8098c2ed39c889e129c2`，`device="cpu"`。三天收益取第 3 步对数价格分位数减 ln(P_T)，下标 0/4/8 | 有效 | 官方包的 torch 在 extra 里，只写 `timesfm==3.0.2` 装不上 PyTorch。MPS 不作为通过条件 |
 
 ## 下一步行动
 
-1. 做 M0：建 `.venv` 和只锁 pytest 的 `requirements.txt`，先写失败测试，再让 `python -m pytest` 变绿。覆盖尺子、区间分数、四态（下限注入 0）、下限生效、相位、种子、停牌行、日历缺口、复牌首日、快照第一行。不下载行情，不下载模型。
-2. M1 再做：把 `baostock==0.9.4`、pandas、numpy 写入锁文件；全量快照；含自然日的交易日历；质检失败即停；尺子的 MDE，按 0.05 + 2.8 × SE 报告。源不可用就停，不换源，也不换股票。
-3. M2 再把 `timesfm==3.0.2` 写入锁文件。
-4. 设计与脚手架已在 `https://github.com/kiss3735707/stock_TimesFM` 的 `main`。M0 做完后再请示是否提交代码。
+1. 三个里程碑都已验收。没有下一项实现。
+2. 按用户确认，分成三次提交并推到 `https://github.com/kiss3735707/stock_TimesFM`。
 
 ## 已知问题 / 待调参
 
-- 正式价格快照还没有。2026-11-17 只做了几天的冒烟，不能拿来评分。baostock 装在临时环境，不在本项目里。
+- 正式快照是 `data/603232_baostock_20261117.csv`，1422 行，2021-01-04 至 2026-11-17，收盘 12.82。日历 2147 行，其中 725 个非交易日。这段里没有停牌。SHA256 见 `reports/20261117T221500/run.json`。
 - TimesFM 3.0 权重是非商业许可（代码 Apache-2.0）。本项目只做本机研究对照。
 - 主预训练语料截止未公开。2023-11 只避开了已写明的 Wiki 截止。窗口若跨过 2024，结论仍可能受预训练污染，方向对 TimesFM 有利。
 - 80% 区间的系数已定为 Φ⁻¹(0.9) ≈ 1.2816，M0 的测试锁定这个常数。
@@ -92,21 +96,37 @@
 ## 运行与验证
 
 - 运行：M1 之前没有预测命令。M1 起为 `python -m interval_compare run --snapshot data/603232_baostock_YYYYMMDD.csv --out reports/<运行时刻>/`
-- 自动化验证：`python -m pytest`
-- 用户验收清单：M0 看 pytest 先红后绿。M1 看 `summary.md` 里的尺子区间分数、覆盖率、MDE，不看 δ。M2 看同一文件里的四态结论、剔除计数和 `run.json`。同一份快照重复运行，`rows.csv` 的数值不变。
+- 自动化验证：`.venv/bin/python -m pytest`。2026-11-17 M1 先红（收集 `tests/test_m1.py` 失败），实现后 `29 passed in 0.55s`，退出码 0。
+- 下载：`.venv/bin/python -m interval_compare download --out data`，退出码 0，约 7 秒，写出 `data/603232_baostock_20261117.csv`。
+- 尺子：`.venv/bin/python -m interval_compare run --snapshot data/603232_baostock_20261117.csv --out reports/20261117T221500`，退出码 0。不重叠起点 245，平均区间分数 0.247217，覆盖率 0.775510，平均宽度 0.157365，中位数绝对误差 0.034006，MDE 0.313308。没有 δ。
+- TimesFM：同一条 run 命令，输出 `reports/20261117T223800`，退出码 0，约 31 秒（权重已在本机）。四态为「证据不足」。δ = -0.033480，95% 区间 -0.097025 – 0.024552。原因是点估计没跨过门槛而区间跨过了门槛。尺子平均区间分数仍是 0.247217，TimesFM 是 0.255493。
+- 用户验收清单：M2 看 `reports/20261117T223800/summary.md` 的四态、剔除计数和 `run.json`。同一份快照重复运行，`rows.csv` 的数值不变。
 
 ## 模块地图
 
-轻量项目不单列 ARCHITECTURE.md。目前还没有业务代码。
+轻量项目不单列 ARCHITECTURE.md。下载和评分分开：测试不访问 baostock。
 
 | 文件 / 目录 | 职责 | 关键导出 / 入口 | 依赖谁 |
 |-----------|------|----------------|--------|
+| `interval_compare/ruler.py` | 20 日尺子的 80% 区间 | `ruler_band`、`Z80` | 标准库 |
+| `interval_compare/score.py` | 80% 区间分数 | `interval_score` | 无 |
+| `interval_compare/decide.py` | 相位、bootstrap、四态 | `phase`、`bootstrap_deltas`、`decide` | 标准库 |
+| `interval_compare/rows.py` | 停牌剔除、复牌、日历缺口 | `filter_scoring_rows`、`is_resume_day`、`select_origins` | 无 |
+| `interval_compare/qa.py` | 快照质检，失败即停 | `check_snapshot` | `rows.py` |
+| `interval_compare/report.py` | 尺子汇总、MDE、写出三件产物 | `evaluate_ruler`、`write_run` | pandas、numpy |
+| `interval_compare/download.py` | 一次性 baostock 下载 | `download_snapshot` | baostock、pandas |
+| `interval_compare/forecast.py` | 对数价格上下文、第 3 步分位数、δ 的区间和四态 | `forecast_return_bands`、`comparison_from_scores` | numpy、timesfm |
+| `interval_compare/__main__.py` | `download` 与 `run`。`run` 在 CPU 上加载 TimesFM | `python -m interval_compare` | 上面各模块 |
+| `reports/20261117T223800/` | M2 的四态结论 | 无 | 快照与 TimesFM 3.0.2 |
+| `data/603232_baostock_20261117.csv` | 冻结的前复权日线 | 无 | baostock |
+| `reports/20261117T221500/` | M1 的 rows.csv、summary.md、run.json | 无 | 快照 |
+| `tests/test_m0.py` | M0 断言 | `python -m pytest` | pytest |
 | `AGENTS.md` | VCM 核心规则，复制自方法论 CORE.md | 无 | 无 |
 | `DESIGN.md` | 产品意图 | 无 | 无 |
 | `PROGRESS.md` | 进度真相源 | 无 | 无 |
 | `.cursor/skills/` | vibe-bootstrap、vibe-milestone、vibe-handoff | Cursor 按需加载 | 无 |
 
-数据流（M1 起）：价格快照 → 日频收盘价 → 收益率 → 纯函数区间 → 对照表。区间计算保持无网络，以便 `python -m pytest` 闭环。下载价格和加载 TimesFM 留在单独的 I/O 入口，M0 不碰。
+数据流：价格快照 → 日频收盘价 → 收益率 → 尺子与 TimesFM 区间 → 对照表。`python -m pytest` 不下载权重。加载 TimesFM 只发生在 `run`。
 
 ## 会话交接块
 
@@ -114,7 +134,7 @@
 
 ```
 ## 会话交接块
-- 当前状态：第四轮处置已写入 DESIGN 与本文件。不换股。MDE = 0.05 + 2.8 × SE。四态下限正式为 150，测试可注入 0。无实验代码，无正式快照。`main` 已推到 `https://github.com/kiss3735707/stock_TimesFM`。
-- 下一步精确动作：做 M0，先建 pytest 虚拟环境，再先红后绿。不下载全量行情，不下载模型。M0 的代码提交仍须你同意。
-- 未决问题：无设计选择待拍板。快照留到 M1，模型权重留到 M2。
+- 当前状态：三个里程碑都已验收。四态是「证据不足」。pytest 35 passed。
+- 下一步精确动作：无剩余实现。提交并推送后，本文件与远端一致。
+- 未决问题：无。
 ```

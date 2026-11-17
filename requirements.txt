@@ -1,0 +1,6 @@
+pytest==8.3.5
+baostock==0.9.4
+pandas==2.2.3
+numpy==2.1.3
+timesfm[torch]==3.0.2
+torch==2.15.0
